@@ -1,0 +1,22 @@
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Oracle data directory
+oracle-data/
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.iml

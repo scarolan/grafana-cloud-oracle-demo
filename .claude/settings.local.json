@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:grafana.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(dir:*)",
+      "Bash(tree:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(docker run:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(curl:*)",
+      "Bash(cut:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

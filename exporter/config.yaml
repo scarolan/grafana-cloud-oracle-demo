@@ -1,0 +1,6 @@
+databases:
+  default:
+    username: grafanau
+    password: oracle
+    url: oracle-db:1521/XEPDB1
+    queryTimeout: 5
