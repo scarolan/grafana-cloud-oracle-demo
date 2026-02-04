@@ -1,9 +1,9 @@
 {
   "apiVersion": "dashboard.grafana.app/v2beta1",
-  "kind": "Dashboard",
+  "kind": "DashboardWithAccessInfo",
   "metadata": {
     "name": "sc4dwxx",
-    "generation": 5,
+    "generation": 8,
     "creationTimestamp": "2026-02-04T00:17:35Z",
     "labels": {},
     "annotations": {}
@@ -78,7 +78,7 @@
                 "mode": "html"
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -192,7 +192,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -293,7 +293,7 @@
                 "valueMode": "color"
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -407,7 +407,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -581,7 +581,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -775,7 +775,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -941,7 +941,7 @@
                 "showHeader": true
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -961,6 +961,7 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
+                        "editorMode": "code",
                         "expr": "oracledb_blocking_sessions_value{instance=\"oracle-demo\"}",
                         "instant": false,
                         "legendFormat": "Blocker: {{blocking_sid}} → Blocked: {{blocked_sid}} ({{username}})",
@@ -1058,7 +1059,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1176,7 +1177,7 @@
                 "xTickLabelSpacing": 0
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1196,7 +1197,9 @@
                       "kind": "DataQuery",
                       "spec": {
                         "app": "grafana-assistant-app",
-                        "expr": "{job=\"oracle/alerts\"} |~ \"ORA-\"",
+                        "direction": "backward",
+                        "editorMode": "code",
+                        "expr": "{job=\"oracle/alert-log\"} |~ \"ORA-\"",
                         "instant": false,
                         "queryType": "range",
                         "range": true
@@ -1236,7 +1239,7 @@
                 "wrapLogMessage": true
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1331,7 +1334,7 @@
                 "wideLayout": true
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1415,7 +1418,7 @@
                 "wideLayout": true
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1499,7 +1502,7 @@
                 "wideLayout": true
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1583,7 +1586,7 @@
                 "wideLayout": true
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1697,7 +1700,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1811,7 +1814,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -1925,7 +1928,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       },
@@ -2059,7 +2062,7 @@
                 }
               }
             },
-            "version": "12.4.0-21531533851"
+            "version": "12.4.0-21646602511"
           }
         }
       }
@@ -2310,7 +2313,7 @@
     "preload": false,
     "tags": [],
     "timeSettings": {
-      "autoRefresh": "",
+      "autoRefresh": "auto",
       "autoRefreshIntervals": [
         "5s",
         "10s",
@@ -2324,7 +2327,7 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "now-15m",
+      "from": "now-1h",
       "hideTimepicker": false,
       "timezone": "browser",
       "to": "now"

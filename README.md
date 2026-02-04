@@ -102,6 +102,54 @@ SQL> EXEC generate_load;
 # - Generate visible activity in all metrics
 ```
 
+### Step 6: Demo Features (Advanced)
+
+This demo includes automated scripts for showcasing Oracle monitoring capabilities:
+
+#### Create Blocking Sessions
+
+To demonstrate lock contention monitoring:
+
+```bash
+# Create a 3-minute blocking session scenario
+docker exec oracle-db bash /tmp/create_blocking.sh
+
+# Output shows:
+# Blocker SID: XX
+# Blocked SID: YY
+```
+
+Verify in Grafana with query:
+```promql
+oracledb_blocking_sessions_value{instance="oracle-demo"}
+```
+
+The metric shows which sessions are blocked and by whom. The blocking automatically resolves after 3 minutes.
+
+#### ORA- Error Stream
+
+The demo automatically injects ORA- errors into the alert log every 60 seconds for log monitoring demonstration. Errors include realistic scenarios like:
+- ORA-00942: table or view does not exist
+- ORA-01476: divisor is equal to zero
+- ORA-01722: invalid number
+- ORA-00001: unique constraint violated
+
+View errors in Grafana Loki with query:
+```logql
+{job="oracle/alert-log"} |~ "ORA-"
+```
+
+The `ora_error` label is automatically extracted (e.g., `ora_error="ORA-00942"`).
+
+**To restart error injection manually:**
+```bash
+# Stop existing injection (if running)
+docker exec oracle-db pkill -f inject_ora_errors
+
+# Start error injection
+docker exec -d oracle-db bash /tmp/inject_ora_errors.sh
+```
+
 ## Architecture
 
 ```
