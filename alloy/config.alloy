@@ -107,7 +107,7 @@ discovery.relabel "oracle_logs" {
 
     rule {
         target_label = "job"
-        replacement  = "oracle/container-logs"
+        replacement  = "oracle/alerts"
     }
 }
 
@@ -130,6 +130,35 @@ loki.source.docker "oracle" {
     host       = "unix:///var/run/docker.sock"
     targets    = discovery.relabel.oracle_logs.output
     forward_to = [loki.process.oracle_logs.receiver]
+}
+
+// Oracle Alert Log - Direct file reading for ORA- errors
+local.file_match "oracle_alert_log" {
+    path_targets = [{
+        __path__ = "/var/log/oracle/alert_XE.log",
+        job      = "oracle/alert-log",
+        instance = "oracle-demo",
+    }]
+}
+
+loki.source.file "oracle_alert_log" {
+    targets    = local.file_match.oracle_alert_log.targets
+    forward_to = [loki.process.alert_log.receiver]
+}
+
+loki.process "alert_log" {
+    forward_to = [loki.write.grafana_cloud.receiver]
+
+    // Extract ORA-XXXXX error codes
+    stage.regex {
+        expression = "(?P<ora_error>ORA-\\d{5})"
+    }
+
+    stage.labels {
+        values = {
+            ora_error = "",
+        }
+    }
 }
 
 loki.write "grafana_cloud" {

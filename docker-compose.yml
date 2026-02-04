@@ -8,6 +8,7 @@ services:
       - "1521:1521"
     volumes:
       - ./oracle-init/init.sql:/container-entrypoint-initdb.d/init.sql
+      - oracle-logs:/opt/oracle/diag/rdbms/xe/XE/trace
     healthcheck:
       test: ["CMD", "healthcheck.sh"]
       interval: 30s
@@ -46,6 +47,7 @@ services:
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - oracle-logs:/var/log/oracle:ro
     command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
     depends_on:
       oracle-db:
@@ -54,6 +56,10 @@ services:
         condition: service_started
     networks:
       - oracle-demo
+
+volumes:
+  oracle-logs:
+    driver: local
 
 networks:
   oracle-demo:
