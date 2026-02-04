@@ -3,7 +3,7 @@
   "kind": "DashboardWithAccessInfo",
   "metadata": {
     "name": "sc4dwxx",
-    "generation": 8,
+    "generation": 9,
     "creationTimestamp": "2026-02-04T00:17:35Z",
     "labels": {},
     "annotations": {}
@@ -244,10 +244,10 @@
                   "max": 100,
                   "min": 0,
                   "thresholds": {
-                    "mode": "absolute",
+                    "mode": "percentage",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "blue",
                         "value": 0
                       },
                       {
@@ -848,10 +848,13 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
                   "custom": {
                     "align": "auto",
                     "cellOptions": {
-                      "type": "auto"
+                      "type": "color-background"
                     },
                     "footer": {
                       "reducers": []
@@ -862,7 +865,7 @@
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "blue",
                         "value": 0
                       },
                       {
@@ -1115,7 +1118,7 @@
                     "axisLabel": "",
                     "axisPlacement": "auto",
                     "fillOpacity": 80,
-                    "gradientMode": "none",
+                    "gradientMode": "scheme",
                     "hideFrom": {
                       "legend": false,
                       "tooltip": false,
@@ -1133,7 +1136,7 @@
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "blue",
                         "value": 0
                       },
                       {
@@ -1292,7 +1295,7 @@
                           "text": "Down"
                         },
                         "1": {
-                          "color": "green",
+                          "color": "blue",
                           "text": "Up"
                         }
                       },
@@ -1307,7 +1310,7 @@
                         "value": 0
                       },
                       {
-                        "color": "green",
+                        "color": "blue",
                         "value": 1
                       }
                     ]
@@ -1379,19 +1382,22 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "continuous-BlPu"
+                  },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "blue",
                         "value": 0
                       },
                       {
-                        "color": "yellow",
+                        "color": "purple",
                         "value": 150
                       },
                       {
-                        "color": "red",
+                        "color": "dark-purple",
                         "value": 250
                       }
                     ]
@@ -1463,15 +1469,18 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "continuous-YlRd"
+                  },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "yellow",
                         "value": 0
                       },
                       {
-                        "color": "yellow",
+                        "color": "orange",
                         "value": 100
                       },
                       {
@@ -1547,19 +1556,22 @@
             "spec": {
               "fieldConfig": {
                 "defaults": {
+                  "color": {
+                    "mode": "continuous-purples"
+                  },
                   "thresholds": {
                     "mode": "absolute",
                     "steps": [
                       {
-                        "color": "green",
+                        "color": "light-purple",
                         "value": 0
                       },
                       {
-                        "color": "yellow",
+                        "color": "purple",
                         "value": 100
                       },
                       {
-                        "color": "red",
+                        "color": "dark-purple",
                         "value": 200
                       }
                     ]
@@ -2313,7 +2325,7 @@
     "preload": false,
     "tags": [],
     "timeSettings": {
-      "autoRefresh": "auto",
+      "autoRefresh": "",
       "autoRefreshIntervals": [
         "5s",
         "10s",
