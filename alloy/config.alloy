@@ -1,6 +1,6 @@
 // Oracle Integration - Native Alloy Exporter
 prometheus.exporter.oracledb "integration" {
-    connection_string = "oracle://grafanau:oracle@oracle-db:1521/DEMOPDB"
+    connection_string = "oracle://grafanau:oracle@oracle-db:1521/XEPDB1"
 }
 
 discovery.relabel "integration" {
