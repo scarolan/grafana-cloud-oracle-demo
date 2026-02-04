@@ -4,7 +4,9 @@ services:
     container_name: oracle-db
     environment:
       ORACLE_PASSWORD: ${ORACLE_PASSWORD}
-      ORACLE_DATABASE: XEPDB1
+      ORACLE_DATABASE: DEMOPDB
+      APP_USER: grafanau
+      APP_USER_PASSWORD: ${ORACLE_PASSWORD}
     ports:
       - "1521:1521"
     volumes:

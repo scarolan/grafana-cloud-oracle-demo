@@ -1,5 +1,5 @@
 -- Connect to pluggable database
-ALTER SESSION SET CONTAINER = XEPDB1;
+ALTER SESSION SET CONTAINER = DEMOPDB;
 
 -- Create monitoring user for Grafana Integration
 CREATE USER grafanau IDENTIFIED BY oracle;

@@ -2,7 +2,7 @@ databases:
   default:
     username: grafanau
     password: oracle
-    url: oracle-db:1521/XEPDB1
+    url: oracle-db:1521/DEMOPDB
     queryTimeout: 5
 
 metrics:
