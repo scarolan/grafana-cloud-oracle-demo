@@ -80,7 +80,7 @@ grafana-alloy           Up                  0.0.0.0:12345->12345/tcp
 
 1. In Grafana Cloud, go to **Dashboards** → **New** → **Import**
 2. Click **Upload dashboard JSON file**
-3. Select `oracle-dashboard.yaml` from this repository
+3. Select `oracle_dashboard.json` from this repository
 4. Click **Import**
 
 The dashboard is pre-configured to show metrics from both collection methods with `instance="oracle-demo"` filter.
@@ -160,7 +160,7 @@ All metrics include the `collection_method` label for easy comparison:
 
 ### Using the Included Dashboard
 
-The included `oracle-dashboard.yaml` provides:
+The included `oracle_dashboard.json` provides:
 - **Database Status** - Uptime and availability
 - **Sessions & Processes** - Connection and resource monitoring
 - **Activity Metrics** - SQL executions, commits, parses
@@ -449,7 +449,7 @@ grafana-cloud-oracle-demo/
 │   └── config.yaml             # Oracle OTel Exporter configuration
 ├── oracle-init/
 │   └── init.sql                # DB initialization, user creation, load generator
-├── oracle-dashboard.yaml        # Pre-built Grafana dashboard
+├── oracle_dashboard.json        # Pre-built Grafana dashboard
 ├── oracle_dashboard.png         # Dashboard screenshot
 ├── .env.example                # Template for environment variables
 ├── .gitignore                  # Exclude .env and sensitive files
