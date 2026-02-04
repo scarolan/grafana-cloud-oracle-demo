@@ -154,21 +154,21 @@ docker exec -d oracle-db bash /tmp/inject_ora_errors.sh
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Docker Environment                        │
-│                                                                  │
-│  ┌──────────────────┐         ┌─────────────────────────────┐  │
-│  │  Oracle XE DB    │◄────────│  Oracle OTel Exporter       │  │
-│  │  Port: 1521      │         │  Port: 19161                │  │
-│  │                  │         │  Exposes: /metrics          │  │
-│  └────────┬─────────┘         └──────────┬──────────────────┘  │
+│                        Docker Environment                       │
+│                                                                 │
+│  ┌──────────────────┐         ┌─────────────────────────────┐   │
+│  │  Oracle XE DB    │◄────────│  Oracle OTel Exporter       │   │
+│  │  Port: 1521      │         │  Port: 19161                │   │
+│  │                  │         │  Exposes: /metrics          │   │
+│  └────────┬─────────┘         └───────────┬─────────────────┘   │
 │           │                               │                     │
-│           │         ┌─────────────────────▼──────────────────┐ │
-│           └────────►│  Grafana Alloy v1.8.2                  │ │
-│                     │  - Built-in oracledb exporter (→ DB)   │ │
-│                     │  - Scrapes OTel Exporter (→ :19161)    │ │
-│                     │  - Labels each with collection_method  │ │
-│                     │  - Remote writes to Grafana Cloud      │ │
-│                     └─────────────────────┬──────────────────┘ │
+│           │         ┌─────────────────────▼──────────────────┐  │
+│           └────────►│  Grafana Alloy v1.8.2                  │  │
+│                     │  - Built-in oracledb exporter (→ DB)   │  │
+│                     │  - Scrapes OTel Exporter (→ :19161)    │  │
+│                     │  - Labels each with collection_method  │  │
+│                     │  - Remote writes to Grafana Cloud      │  │
+│                     └─────────────────────┬──────────────────┘  │
 │                                           │                     │
 └───────────────────────────────────────────┼─────────────────────┘
                                             │
