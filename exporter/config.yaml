@@ -4,3 +4,8 @@ databases:
     password: oracle
     url: oracle-db:1521/XEPDB1
     queryTimeout: 5
+
+metrics:
+  default: default-metrics.toml
+  custom:
+    - /custom-metrics.toml

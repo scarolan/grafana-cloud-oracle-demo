@@ -1,0 +1,107 @@
+# Custom Oracle Metrics for Query-Level Monitoring
+# These metrics provide visibility into individual SQL queries, blocking sessions,
+# and long-running transactions.
+
+# Metric: Slow Queries
+# Captures SQL queries that have been running for more than 60 seconds
+# Labels: sql_id, username, status, wait_event
+[[metric]]
+context = "slow_queries"
+labels = [ "sql_id", "username", "status", "wait_event" ]
+metricsdesc = { value = "SQL queries running longer than 60 seconds" }
+request = '''
+SELECT
+    NVL(sql_id, 'NONE') as sql_id,
+    NVL(username, 'UNKNOWN') as username,
+    NVL(status, 'UNKNOWN') as status,
+    NVL(event, 'NONE') as wait_event,
+    ROUND((SYSDATE - sql_exec_start) * 86400) as value
+FROM v$session
+WHERE type = 'USER'
+  AND status = 'ACTIVE'
+  AND sql_exec_start IS NOT NULL
+  AND (SYSDATE - sql_exec_start) * 86400 > 60
+  AND username NOT IN ('SYS', 'SYSTEM')
+'''
+
+# Metric: Blocking Sessions
+# Identifies sessions that are blocking other sessions (lock contention)
+# Labels: blocking_sid, blocked_sid, blocking_user, blocked_user, sql_id
+[[metric]]
+context = "blocking_sessions"
+labels = [ "blocking_sid", "blocked_sid", "blocking_user", "blocked_user", "sql_id" ]
+metricsdesc = { value = "Sessions blocking other sessions" }
+request = '''
+SELECT
+    TO_CHAR(s1.sid) as blocking_sid,
+    TO_CHAR(s2.sid) as blocked_sid,
+    NVL(s1.username, 'UNKNOWN') as blocking_user,
+    NVL(s2.username, 'UNKNOWN') as blocked_user,
+    NVL(s2.sql_id, 'NONE') as sql_id,
+    1 as value
+FROM v$session s1, v$session s2
+WHERE s1.sid = s2.blocking_session
+  AND s2.blocking_session IS NOT NULL
+'''
+
+# Metric: SQL Execution Time
+# Tracks current execution time for all active SQL queries
+# Labels: sql_id, username, program
+[[metric]]
+context = "sql_execution_time"
+labels = [ "sql_id", "username", "program" ]
+metricsdesc = { elapsed_seconds = "Current elapsed time for active SQL" }
+request = '''
+SELECT
+    NVL(sql_id, 'NONE') as sql_id,
+    NVL(username, 'UNKNOWN') as username,
+    NVL(SUBSTR(program, 1, 30), 'UNKNOWN') as program,
+    ROUND((SYSDATE - sql_exec_start) * 86400) as elapsed_seconds
+FROM v$session
+WHERE type = 'USER'
+  AND status = 'ACTIVE'
+  AND sql_exec_start IS NOT NULL
+  AND username NOT IN ('SYS', 'SYSTEM')
+ORDER BY elapsed_seconds DESC
+FETCH FIRST 20 ROWS ONLY
+'''
+
+# Metric: Long Transactions
+# Identifies transactions that have been open for more than 5 minutes
+# Labels: sid, username, start_time
+[[metric]]
+context = "long_transactions"
+labels = [ "sid", "username" ]
+metricsdesc = { duration_seconds = "Transaction duration in seconds" }
+request = '''
+SELECT
+    TO_CHAR(s.sid) as sid,
+    NVL(s.username, 'UNKNOWN') as username,
+    ROUND((SYSDATE - t.start_date) * 86400) as duration_seconds
+FROM v$session s, v$transaction t
+WHERE s.taddr = t.addr
+  AND s.username NOT IN ('SYS', 'SYSTEM')
+  AND (SYSDATE - t.start_date) * 86400 > 300
+'''
+
+# Metric: Active Session Details
+# Provides detailed information about all active user sessions
+# Labels: sid, username, sql_id, wait_class, machine
+[[metric]]
+context = "active_session_details"
+labels = [ "sid", "username", "sql_id", "wait_class", "machine" ]
+metricsdesc = { seconds_in_wait = "Time spent waiting in current wait event" }
+request = '''
+SELECT
+    TO_CHAR(sid) as sid,
+    NVL(username, 'UNKNOWN') as username,
+    NVL(sql_id, 'NONE') as sql_id,
+    NVL(wait_class, 'NONE') as wait_class,
+    NVL(SUBSTR(machine, 1, 20), 'UNKNOWN') as machine,
+    seconds_in_wait
+FROM v$session
+WHERE type = 'USER'
+  AND status = 'ACTIVE'
+  AND username IS NOT NULL
+  AND username NOT IN ('SYS', 'SYSTEM')
+'''

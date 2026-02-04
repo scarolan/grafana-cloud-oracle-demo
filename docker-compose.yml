@@ -23,6 +23,7 @@ services:
     container_name: oracle-otel-exporter
     volumes:
       - ./exporter/config.yaml:/config.yaml
+      - ./exporter/custom-metrics.toml:/custom-metrics.toml
     command: ["--config.file=/config.yaml"]
     ports:
       - "19161:9161"
@@ -39,10 +40,13 @@ services:
       GRAFANA_CLOUD_METRICS_URL: ${GRAFANA_CLOUD_METRICS_URL}
       GRAFANA_CLOUD_METRICS_USERNAME: ${GRAFANA_CLOUD_METRICS_USERNAME}
       GRAFANA_CLOUD_API_KEY: ${GRAFANA_CLOUD_API_KEY}
+      GRAFANA_CLOUD_LOGS_URL: ${GRAFANA_CLOUD_LOGS_URL:-}
+      GRAFANA_CLOUD_LOGS_USERNAME: ${GRAFANA_CLOUD_LOGS_USERNAME:-}
     ports:
       - "12345:12345"
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
     depends_on:
       oracle-db:

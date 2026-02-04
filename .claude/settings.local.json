@@ -16,7 +16,18 @@
       "Bash(docker-compose up:*)",
       "Bash(curl:*)",
       "Bash(cut:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(gh issue create:*)",
+      "Bash(git checkout:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker volume:*)",
+      "Bash(docker system prune:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker-compose config:*)",
+      "Bash(docker-compose run:*)",
+      "Bash(xargs docker volume rm:*)"
     ]
   }
 }

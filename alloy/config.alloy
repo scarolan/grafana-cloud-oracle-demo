@@ -78,3 +78,67 @@ prometheus.remote_write "grafana_cloud" {
         }
     }
 }
+
+// Oracle Alert Logs to Loki (Optional - requires GRAFANA_CLOUD_LOGS_URL)
+// Note: This uses docker.discovery to find and tail Oracle container logs
+// Alternatively, you can exec into Oracle and tail: docker exec oracle-db tail -f /opt/oracle/diag/rdbms/xe/XE/trace/alert_XE.log
+discovery.docker "oracle" {
+    host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "oracle_logs" {
+    targets = discovery.docker.oracle.targets
+
+    rule {
+        source_labels = ["__meta_docker_container_name"]
+        regex         = "/oracle-db"
+        action        = "keep"
+    }
+
+    rule {
+        source_labels = ["__meta_docker_container_id"]
+        target_label  = "container_id"
+    }
+
+    rule {
+        target_label = "instance"
+        replacement  = "oracle-demo"
+    }
+
+    rule {
+        target_label = "job"
+        replacement  = "oracle/container-logs"
+    }
+}
+
+loki.process "oracle_logs" {
+    forward_to = [loki.write.grafana_cloud.receiver]
+
+    // Extract Oracle error codes (ORA-XXXXX) and add as label
+    stage.regex {
+        expression = "(?P<ora_error>ORA-\\d{5})"
+    }
+
+    stage.labels {
+        values = {
+            ora_error = "",
+        }
+    }
+}
+
+loki.source.docker "oracle" {
+    host       = "unix:///var/run/docker.sock"
+    targets    = discovery.relabel.oracle_logs.output
+    forward_to = [loki.process.oracle_logs.receiver]
+}
+
+loki.write "grafana_cloud" {
+    endpoint {
+        url = env("GRAFANA_CLOUD_LOGS_URL")
+
+        basic_auth {
+            username = env("GRAFANA_CLOUD_LOGS_USERNAME")
+            password = env("GRAFANA_CLOUD_API_KEY")
+        }
+    }
+}
