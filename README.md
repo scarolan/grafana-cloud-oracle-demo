@@ -1,6 +1,15 @@
 # Oracle Observability Demo for Grafana Cloud
 
-![Oracle Dashboard](oracle_dashboard.png)
+<table>
+  <tr>
+    <td width="50%"><img src="dashboard_screenshot_1.png" alt="Dashboard Top Section"></td>
+    <td width="50%"><img src="dashboard_screenshot_2.png" alt="Dashboard Metrics"></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="dashboard_screenshot_3.png" alt="Dashboard Blocking Sessions"></td>
+    <td width="50%"><img src="dashboard_screenshot_4.png" alt="Dashboard Error Logs"></td>
+  </tr>
+</table>
 
 A Docker-based demonstration showcasing **two methods** for collecting Oracle Database metrics and sending them to Grafana Cloud:
 
