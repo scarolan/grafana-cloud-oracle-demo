@@ -89,18 +89,33 @@ The dashboard is pre-configured to show metrics from both collection methods wit
 
 To generate realistic database activity for demos:
 
+**Option 1: Single Command (Recommended for SEs)**
+
+```bash
+# Bash/Linux/Mac
+docker exec oracle-db sqlplus -S demo_user/oracle@XEPDB1 <<< "EXEC generate_load;"
+```
+
+```powershell
+# PowerShell/Windows
+echo "EXEC generate_load;" | docker exec -i oracle-db sqlplus -S demo_user/oracle@XEPDB1
+```
+
+**Option 2: Interactive (for troubleshooting)**
+
 ```bash
 # Connect to Oracle as demo_user
 docker exec -it oracle-db sqlplus demo_user/oracle@XEPDB1
 
 # Execute the load generator (runs for ~16 minutes)
 SQL> EXEC generate_load;
-
-# The procedure will:
-# - Insert 1000 records into sales and customers tables
-# - Perform SELECT and UPDATE operations
-# - Generate visible activity in all metrics
 ```
+
+**What the load generator does:**
+- Inserts 1000 records into sales and customers tables
+- Performs SELECT and UPDATE operations
+- Generates visible activity in all metrics
+- Runs for approximately 16 minutes
 
 ### Step 6: Demo Features (Advanced)
 
