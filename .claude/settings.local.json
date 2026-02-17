@@ -30,7 +30,10 @@
       "Bash(xargs docker volume rm:*)",
       "Bash(git push:*)",
       "Bash(ls:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(python3:*)",
+      "Bash(docker compose up:*)",
+      "Bash(ping:*)"
     ]
   }
 }
