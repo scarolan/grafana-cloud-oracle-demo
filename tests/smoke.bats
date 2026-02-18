@@ -74,7 +74,7 @@
 }
 
 @test "oracle-otel-exporter metrics endpoint is accessible" {
-  run curl -sf http://localhost:19161/metrics
+  run docker compose exec oracle-otel-exporter bash -c 'exec 3<>/dev/tcp/localhost/9161; echo -e "GET /metrics HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; cat <&3; exec 3>&-'
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'oracledb_up'
 }
