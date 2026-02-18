@@ -1,0 +1,27 @@
+# =============================================================================
+# Terraform Variable Values
+# Copy this file to terraform.tfvars and fill in your values:
+#   cp terraform.tfvars.example terraform.tfvars
+# =============================================================================
+# Note: Sensitive values (API keys, passwords) should be set via environment
+# variables using the TF_VAR_ prefix. For example:
+#   export TF_VAR_grafana_api_key="glc_xxxxx"
+# =============================================================================
+
+# --- AWS ---
+# aws_region = "us-east-1"
+
+# --- Azure ---
+# azure_location       = "eastus"
+# azure_resource_group = "demo-rg"
+
+# --- GCP ---
+# gcp_project = "my-project-id"
+# gcp_region  = "us-central1"
+
+# --- Grafana ---
+# grafana_url = "https://your-instance.grafana.net"
+
+# --- Demo ---
+# demo_name        = "grafana-demo"
+# demo_environment = "demo"

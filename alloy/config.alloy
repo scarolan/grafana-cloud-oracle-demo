@@ -1,6 +1,34 @@
-// Oracle Integration - Native Alloy Exporter
+// =============================================================================
+// Grafana Alloy Configuration -- Oracle Demo
+// Collects metrics via two methods and logs via Docker + alert log file
+// =============================================================================
+
+// =============================================================================
+// Metrics -- Prometheus remote write to Grafana Cloud
+// =============================================================================
+
+prometheus.remote_write "grafana_cloud" {
+    endpoint {
+        url = env("GRAFANA_METRICS_URL")
+
+        basic_auth {
+            username = env("GRAFANA_METRICS_USERNAME")
+            password = env("GRAFANA_METRICS_API_KEY")
+        }
+    }
+}
+
+// Alloy self-monitoring
+prometheus.scrape "alloy_self" {
+    targets         = [{"__address__" = "localhost:12345"}]
+    forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+    scrape_interval = "15s"
+    metrics_path    = "/metrics"
+}
+
+// Oracle Integration -- Native Alloy Exporter (collection_method="integration")
 prometheus.exporter.oracledb "integration" {
-    connection_string = "oracle://grafanau:oracle@oracle-db:1521/XEPDB1"
+    connection_string = "oracle://grafanau:oracle@demo-oracle-db:1521/XEPDB1"
 }
 
 discovery.relabel "integration" {
@@ -28,10 +56,10 @@ prometheus.scrape "integration" {
     scrape_interval = "60s"
 }
 
-// Oracle OTel Exporter - Scrape from Official Oracle Exporter
+// Oracle OTel Exporter -- Scrape from Official Oracle Exporter (collection_method="otel_exporter")
 discovery.relabel "otel_exporter" {
     targets = [{
-        __address__ = "oracle-otel-exporter:9161",
+        __address__ = "demo-oracle-otel:9161",
     }]
 
     rule {
@@ -56,7 +84,7 @@ prometheus.scrape "otel_exporter" {
     scrape_interval = "60s"
 }
 
-// Metrics Relabeling - Keep only Oracle-relevant metrics
+// Metrics Relabeling -- Keep only Oracle-relevant metrics
 prometheus.relabel "metrics" {
     forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 
@@ -67,23 +95,28 @@ prometheus.relabel "metrics" {
     }
 }
 
-// Remote Write to Grafana Cloud
-prometheus.remote_write "grafana_cloud" {
+// =============================================================================
+// Logs -- Loki push to Grafana Cloud
+// =============================================================================
+
+loki.write "grafana_cloud" {
     endpoint {
-        url = env("GRAFANA_CLOUD_METRICS_URL")
+        url = env("GRAFANA_LOGS_URL")
 
         basic_auth {
-            username = env("GRAFANA_CLOUD_METRICS_USERNAME")
-            password = env("GRAFANA_CLOUD_API_KEY")
+            username = env("GRAFANA_LOGS_USERNAME")
+            password = env("GRAFANA_LOGS_API_KEY")
         }
     }
 }
 
-// Oracle Alert Logs to Loki (Optional - requires GRAFANA_CLOUD_LOGS_URL)
-// Note: This uses docker.discovery to find and tail Oracle container logs
-// Alternatively, you can exec into Oracle and tail: docker exec oracle-db tail -f /opt/oracle/diag/rdbms/xe/XE/trace/alert_XE.log
+// Docker container log discovery -- collect logs from demo-* containers
 discovery.docker "oracle" {
     host = "unix:///var/run/docker.sock"
+    filter {
+        name   = "name"
+        values = ["demo-"]
+    }
 }
 
 discovery.relabel "oracle_logs" {
@@ -91,7 +124,7 @@ discovery.relabel "oracle_logs" {
 
     rule {
         source_labels = ["__meta_docker_container_name"]
-        regex         = "/oracle-db"
+        regex         = "/demo-oracle-db"
         action        = "keep"
     }
 
@@ -108,6 +141,11 @@ discovery.relabel "oracle_logs" {
     rule {
         target_label = "job"
         replacement  = "oracle/alerts"
+    }
+
+    rule {
+        source_labels = ["__meta_docker_compose_service"]
+        target_label  = "service_name"
     }
 }
 
@@ -132,7 +170,7 @@ loki.source.docker "oracle" {
     forward_to = [loki.process.oracle_logs.receiver]
 }
 
-// Oracle Alert Log - Direct file reading for ORA- errors
+// Oracle Alert Log -- Direct file reading for ORA- errors
 local.file_match "oracle_alert_log" {
     path_targets = [{
         __path__ = "/var/log/oracle/alert_XE.log",
@@ -157,17 +195,6 @@ loki.process "alert_log" {
     stage.labels {
         values = {
             ora_error = "",
-        }
-    }
-}
-
-loki.write "grafana_cloud" {
-    endpoint {
-        url = env("GRAFANA_CLOUD_LOGS_URL")
-
-        basic_auth {
-            username = env("GRAFANA_CLOUD_LOGS_USERNAME")
-            password = env("GRAFANA_CLOUD_API_KEY")
         }
     }
 }

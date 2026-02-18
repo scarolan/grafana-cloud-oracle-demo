@@ -1,9 +1,46 @@
-name: oracle-demo
-
 services:
+  # =========================================================================
+  # Grafana Alloy -- Telemetry collector
+  # Scrapes Oracle metrics (native + OTel exporter) and ships to Grafana Cloud
+  # =========================================================================
+  alloy:
+    image: grafana/alloy:v1.8.2
+    container_name: demo-oracle-alloy
+    restart: unless-stopped
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - oracle-logs:/var/log/oracle:ro
+    env_file:
+      - .env
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --stability.level=generally-available
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/12345'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+      oracle-otel-exporter:
+        condition: service_healthy
+    networks:
+      - demo
+
+  # =========================================================================
+  # Oracle Database XE 21c
+  # =========================================================================
   oracle-db:
-    image: gvenzl/oracle-xe:latest
-    container_name: oracle-db
+    image: gvenzl/oracle-xe:21-slim
+    container_name: demo-oracle-db
+    restart: unless-stopped
     environment:
       ORACLE_PASSWORD: ${ORACLE_PASSWORD}
     ports:
@@ -19,51 +56,38 @@ services:
       retries: 10
       start_period: 120s
     networks:
-      - oracle-demo
+      - demo
 
+  # =========================================================================
+  # Oracle OTel Exporter -- Official Oracle observability exporter
+  # Exposes Prometheus metrics at :9161/metrics with custom SQL queries
+  # =========================================================================
   oracle-otel-exporter:
     image: container-registry.oracle.com/database/observability-exporter:2.2.1
-    container_name: oracle-otel-exporter
+    container_name: demo-oracle-otel
+    restart: unless-stopped
     volumes:
       - ./exporter/config.yaml:/config.yaml
       - ./exporter/custom-metrics.toml:/custom-metrics.toml
     command: ["--config.file=/config.yaml"]
     ports:
       - "19161:9161"
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/localhost/9161'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       oracle-db:
         condition: service_healthy
     networks:
-      - oracle-demo
-
-  grafana-alloy:
-    image: grafana/alloy:v1.8.2
-    container_name: grafana-alloy
-    environment:
-      GRAFANA_CLOUD_METRICS_URL: ${GRAFANA_CLOUD_METRICS_URL}
-      GRAFANA_CLOUD_METRICS_USERNAME: ${GRAFANA_CLOUD_METRICS_USERNAME}
-      GRAFANA_CLOUD_API_KEY: ${GRAFANA_CLOUD_API_KEY}
-      GRAFANA_CLOUD_LOGS_URL: ${GRAFANA_CLOUD_LOGS_URL:-}
-      GRAFANA_CLOUD_LOGS_USERNAME: ${GRAFANA_CLOUD_LOGS_USERNAME:-}
-    ports:
-      - "12345:12345"
-    volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - oracle-logs:/var/log/oracle:ro
-    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
-    depends_on:
-      oracle-db:
-        condition: service_healthy
-      oracle-otel-exporter:
-        condition: service_started
-    networks:
-      - oracle-demo
+      - demo
 
 volumes:
   oracle-logs:
     driver: local
 
 networks:
-  oracle-demo:
+  demo:
     driver: bridge

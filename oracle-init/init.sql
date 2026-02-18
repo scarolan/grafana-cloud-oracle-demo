@@ -1,6 +1,9 @@
 -- Connect to pluggable database
 ALTER SESSION SET CONTAINER = XEPDB1;
 
+-- Expand TEMP tablespace (default is ~2MB with no autoextend, triggers capacity alerts)
+ALTER DATABASE TEMPFILE '/opt/oracle/oradata/XE/XEPDB1/temp01.dbf' AUTOEXTEND ON NEXT 64M MAXSIZE 2G;
+
 -- Create monitoring user for Grafana Integration
 CREATE USER grafanau IDENTIFIED BY oracle;
 GRANT CONNECT TO grafanau;

@@ -48,9 +48,12 @@ cp .env.example .env
 2. Click **Details** on your stack
 3. Find the **Prometheus** section, click **Send Metrics**
 4. Copy these values to your `.env` file:
-   - `GRAFANA_CLOUD_METRICS_URL` (e.g., `https://prometheus-prod-XX-XXX.grafana.net/api/prom/push`)
-   - `GRAFANA_CLOUD_METRICS_USERNAME` (numeric user ID)
-   - `GRAFANA_CLOUD_API_KEY` (generate a new API key with "Metrics Push" scope)
+   - `GRAFANA_METRICS_URL` (e.g., `https://prometheus-prod-XX-XXX.grafana.net/api/prom/push`)
+   - `GRAFANA_METRICS_USERNAME` (numeric user ID)
+   - `GRAFANA_METRICS_API_KEY` (generate a new API key with "Metrics Push" scope)
+5. Find the **Loki** section, click **Send Logs**
+6. Copy these values:
+   - `GRAFANA_LOGS_URL`, `GRAFANA_LOGS_USERNAME`, `GRAFANA_LOGS_API_KEY`
 
 Example `.env` file:
 ```env
@@ -58,38 +61,44 @@ Example `.env` file:
 ORACLE_PASSWORD=oracle
 
 # Grafana Cloud Configuration (update with your values)
-GRAFANA_CLOUD_METRICS_URL=https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom/push
-GRAFANA_CLOUD_METRICS_USERNAME=123456
-GRAFANA_CLOUD_API_KEY=glc_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GRAFANA_METRICS_URL=https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom/push
+GRAFANA_METRICS_USERNAME=123456
+GRAFANA_METRICS_API_KEY=glc_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+GRAFANA_LOGS_URL=https://logs-prod-006.grafana.net/loki/api/v1/push
+GRAFANA_LOGS_USERNAME=123456
+GRAFANA_LOGS_API_KEY=glc_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### Step 3: Start the Demo
 
 ```bash
-# Start all services
-docker-compose up -d
+# Using make (recommended)
+make start
+
+# Or manually
+docker compose up -d
 
 # Watch Oracle Database startup (takes 60-90 seconds)
-docker-compose logs -f oracle-db
+docker compose logs -f oracle-db
 # Wait for "DATABASE IS READY TO USE!" message, then press Ctrl+C
 
 # Verify all services are running
-docker-compose ps
+docker compose ps
 ```
 
 Expected output:
 ```
-NAME                    STATUS              PORTS
-oracle-db               Up (healthy)        0.0.0.0:1521->1521/tcp
-oracle-otel-exporter    Up                  0.0.0.0:19161->9161/tcp
-grafana-alloy           Up                  0.0.0.0:12345->12345/tcp
+NAME                STATUS              PORTS
+demo-oracle-db      Up (healthy)        0.0.0.0:1521->1521/tcp
+demo-oracle-otel    Up (healthy)        0.0.0.0:19161->9161/tcp
+demo-oracle-alloy          Up (healthy)        0.0.0.0:12345->12345/tcp
 ```
 
 ### Step 4: Import the Dashboard
 
-1. In Grafana Cloud, go to **Dashboards** → **New** → **Import**
+1. In Grafana Cloud, go to **Dashboards** > **New** > **Import**
 2. Click **Upload dashboard JSON file**
-3. Select `oracle_dashboard.json` from this repository
+3. Select `dashboards/oracle-overview.json` from this repository
 4. Click **Import**
 
 The dashboard is pre-configured to show metrics from both collection methods with `instance="oracle-demo"` filter.
@@ -102,19 +111,19 @@ To generate realistic database activity for demos:
 
 ```bash
 # Bash/Linux/Mac
-docker exec oracle-db sqlplus -S demo_user/oracle@XEPDB1 <<< "EXEC generate_load;"
+docker exec demo-oracle-db sqlplus -S demo_user/oracle@XEPDB1 <<< "EXEC generate_load;"
 ```
 
 ```powershell
 # PowerShell/Windows
-echo "EXEC generate_load;" | docker exec -i oracle-db sqlplus -S demo_user/oracle@XEPDB1
+echo "EXEC generate_load;" | docker exec -i demo-oracle-db sqlplus -S demo_user/oracle@XEPDB1
 ```
 
 **Option 2: Interactive (for troubleshooting)**
 
 ```bash
 # Connect to Oracle as demo_user
-docker exec -it oracle-db sqlplus demo_user/oracle@XEPDB1
+docker exec -it demo-oracle-db sqlplus demo_user/oracle@XEPDB1
 
 # Execute the load generator (runs for ~16 minutes)
 SQL> EXEC generate_load;
@@ -136,10 +145,10 @@ To demonstrate lock contention monitoring:
 
 ```bash
 # Create a 3-minute blocking session scenario (default)
-docker exec oracle-db bash /tmp/create_blocking.sh
+docker exec demo-oracle-db bash /tmp/create_blocking.sh
 
 # Or specify a custom duration in seconds
-docker exec oracle-db bash /tmp/create_blocking.sh 60
+docker exec demo-oracle-db bash /tmp/create_blocking.sh 60
 ```
 
 Verify in Grafana with query:
@@ -167,10 +176,25 @@ The `ora_error` label is automatically extracted (e.g., `ora_error="ORA-00942"`)
 **To restart error injection manually:**
 ```bash
 # Stop existing injection (if running)
-docker exec oracle-db pkill -f inject_ora_errors
+docker exec demo-oracle-db pkill -f inject_ora_errors
 
 # Start error injection
-docker exec -d oracle-db bash /tmp/inject_ora_errors.sh
+docker exec -d demo-oracle-db bash /tmp/inject_ora_errors.sh
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run individual test suites
+make test-preflight    # Prerequisites check
+make test-smoke        # Containers running and healthy
+make test-telemetry    # Metrics/logs flowing to Grafana Cloud
+
+# Run k6 load test (tests the Alloy pipeline)
+make load-test
 ```
 
 ## Architecture
@@ -231,7 +255,7 @@ All metrics include the `collection_method` label for easy comparison:
 
 ### Using the Included Dashboard
 
-The included `oracle_dashboard.json` provides:
+The included `dashboards/oracle-overview.json` provides:
 - **Database Status** - Uptime and availability
 - **Sessions & Processes** - Connection and resource monitoring
 - **Activity Metrics** - SQL executions, commits, parses
@@ -274,8 +298,8 @@ oracledb_tablespace_used_percent{instance="oracle-demo"}
 
 ### 1. Check Container Health
 ```bash
-docker-compose ps
-# All should show "Up" or "Up (healthy)"
+docker compose ps
+# All should show "Up (healthy)"
 ```
 
 ### 2. Check Alloy UI
@@ -294,7 +318,7 @@ curl http://localhost:19161/metrics | grep oracledb_up
 ```
 
 ### 4. Check Grafana Cloud
-- Go to your Grafana Cloud instance → **Explore**
+- Go to your Grafana Cloud instance > **Explore**
 - Run query: `oracledb_up{instance="oracle-demo"}`
 - You should see 2 time series with different `collection_method` labels
 
@@ -314,14 +338,14 @@ curl -s http://localhost:12345/metrics | grep "prometheus_remote_storage_samples
 **Solution:**
 ```bash
 # Check logs
-docker-compose logs oracle-db
+docker compose logs oracle-db
 
 # Common issue: Insufficient memory
 # Ensure Docker Desktop has at least 4GB RAM allocated
-# Docker Desktop → Settings → Resources → Memory
+# Docker Desktop > Settings > Resources > Memory
 
 # If stuck, restart the container
-docker-compose restart oracle-db
+docker compose restart oracle-db
 ```
 
 ### Alloy Cannot Connect to Oracle
@@ -331,14 +355,14 @@ docker-compose restart oracle-db
 **Solution:**
 ```bash
 # Check Alloy logs
-docker-compose logs grafana-alloy | grep -i error
+docker compose logs demo-oracle-alloy | grep -i error
 
 # Verify Oracle is healthy
-docker-compose ps oracle-db
+docker compose ps oracle-db
 # Should show "Up (healthy)"
 
 # Check database connectivity
-docker exec -it oracle-db sqlplus grafanau/oracle@XEPDB1
+docker exec -it demo-oracle-db sqlplus grafanau/oracle@XEPDB1
 SQL> SELECT 1 FROM DUAL;
 SQL> EXIT;
 ```
@@ -350,14 +374,14 @@ SQL> EXIT;
 **Solution:**
 ```bash
 # 1. Verify credentials in .env
-cat .env | grep GRAFANA_CLOUD
+cat .env | grep GRAFANA_METRICS
 
 # 2. Check Alloy UI at http://localhost:12345
 #    Look for prometheus.remote_write.grafana_cloud component
 #    Verify "Samples Sent" is increasing
 
 # 3. Restart Alloy to pick up new credentials
-docker-compose restart grafana-alloy
+docker compose restart alloy
 
 # 4. Wait 1-2 minutes for metrics to appear in Grafana Cloud
 ```
@@ -369,13 +393,13 @@ docker-compose restart grafana-alloy
 **Solution:**
 ```bash
 # Check exporter logs
-docker-compose logs oracle-otel-exporter
+docker compose logs oracle-otel-exporter
 
 # Verify config file
-docker exec oracle-otel-exporter cat /config.yaml
+docker exec demo-oracle-otel cat /config.yaml
 
 # Ensure Oracle is healthy before exporter starts
-docker-compose restart oracle-otel-exporter
+docker compose restart oracle-otel-exporter
 ```
 
 ### Load Generator Issues
@@ -445,7 +469,7 @@ databases:
   default:
     username: grafanau
     password: oracle
-    url: oracle-db:1521/XEPDB1
+    url: demo-oracle-db:1521/XEPDB1
     queryTimeout: 5
 ```
 
@@ -459,7 +483,7 @@ Use this demo to showcase:
 2. **Easy Comparison**: Use `collection_method` label to compare metrics from both sources side-by-side
 3. **No Lock-in**: Organizations can use Oracle's official tooling while still benefiting from Grafana Cloud's unified observability platform
 4. **Real-time Observability**: Live metrics updating every 60 seconds, not just batch reporting
-5. **Simple Deployment**: One Docker Compose command to run entire stack locally
+5. **Simple Deployment**: One `make start` command to run entire stack locally
 6. **Production Ready**: Both exporters are actively maintained and used in production environments
 
 ### Demo Flow Suggestion
@@ -468,7 +492,7 @@ Use this demo to showcase:
 2. **Show idle state** - Point out baseline metrics (2-3 active sessions, low CPU)
 3. **Run load generator** - `EXEC generate_load;` in SQL*Plus
 4. **Watch metrics change** in real-time:
-   - Active sessions spike from 2-3 → 5-7
+   - Active sessions spike from 2-3 > 5-7
    - SQL execution rate increases
    - Wait events accumulate (visible in OTel exporter)
    - Commits increment steadily
@@ -478,11 +502,17 @@ Use this demo to showcase:
 ## Cleanup
 
 ```bash
-# Stop all services
-docker-compose down
+# Stop all services (recommended)
+make stop
+
+# Or manually
+docker compose down
 
 # Stop and remove volumes (completely resets database)
-docker-compose down -v
+docker compose down -v
+
+# Full cleanup (containers, volumes, networks)
+make clean
 ```
 
 ## Advanced Usage
@@ -498,7 +528,7 @@ To add custom SQL queries as metrics:
      default:
        username: grafanau
        password: oracle
-       url: oracle-db:1521/XEPDB1
+       url: demo-oracle-db:1521/XEPDB1
        queryTimeout: 5
        customMetrics: /custom-metrics.toml
    ```
@@ -519,18 +549,36 @@ To send Oracle alert logs to Grafana Cloud Loki, update `alloy/config.alloy` wit
 
 ```
 grafana-cloud-oracle-demo/
+├── CLAUDE.md                    # Demo Builder methodology guide
+├── Makefile                     # Task runner (make start, make test, etc.)
 ├── docker-compose.yml           # Orchestrates all services
+├── .env.example                 # Template for environment variables
+├── .gitignore                   # Exclude .env and sensitive files
 ├── alloy/
-│   └── config.alloy            # Alloy configuration with both collection methods
+│   └── config.alloy             # Alloy configuration with both collection methods
 ├── exporter/
-│   └── config.yaml             # Oracle OTel Exporter configuration
+│   ├── config.yaml              # Oracle OTel Exporter configuration
+│   └── custom-metrics.toml      # Custom SQL queries for additional metrics
 ├── oracle-init/
-│   └── init.sql                # DB initialization, user creation, load generator
-├── oracle_dashboard.json        # Pre-built Grafana dashboard
-├── oracle_dashboard.png         # Dashboard screenshot
-├── .env.example                # Template for environment variables
-├── .gitignore                  # Exclude .env and sensitive files
-└── README.md                   # This file
+│   ├── init.sql                 # DB initialization, user creation, load generator
+│   └── create_blocking.sh       # Lock contention demo script
+├── scripts/
+│   ├── preflight-check.sh       # Verify prerequisites
+│   ├── start-demo.sh            # Start workflow
+│   └── stop-demo.sh             # Stop workflow
+├── tests/
+│   ├── README.md                # Testing methodology
+│   ├── preflight.bats           # Prerequisites tests
+│   ├── smoke.bats               # Service health tests
+│   └── telemetry.bats           # Data flow tests
+├── k6/
+│   ├── README.md                # Load testing documentation
+│   └── load-test.js             # k6 pipeline verification
+├── terraform/                   # Cloud infrastructure stubs (optional)
+├── dashboards/
+│   ├── README.md                # Dashboard import/export workflow
+│   └── oracle-overview.json     # Pre-built Grafana dashboard
+└── README.md                    # This file
 ```
 
 ## Technical Details
@@ -583,4 +631,4 @@ For questions about this demo:
 
 ---
 
-**Built with ❤️ for Grafana Sales Engineers**
+**Built for Grafana Sales Engineers**
