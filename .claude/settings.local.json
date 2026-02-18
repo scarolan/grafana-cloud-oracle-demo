@@ -33,7 +33,16 @@
       "Bash(git rm:*)",
       "Bash(python3:*)",
       "Bash(docker compose up:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker compose:*)",
+      "Bash(git log:*)",
+      "Bash(git -C /home/scarolan/git_repos/grafana-cloud-oracle-demo add README.md docker-compose.yml oracle-init/create_blocking.sh)",
+      "Bash(git -C:*)",
+      "Bash(chmod:*)",
+      "Bash(bats:*)",
+      "Bash(1:*)",
+      "Bash(git merge:*)"
     ]
   }
 }
