@@ -7,8 +7,6 @@ services:
     image: grafana/alloy:v1.8.2
     container_name: demo-oracle-alloy
     restart: unless-stopped
-    ports:
-      - "12345:12345"
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock:ro

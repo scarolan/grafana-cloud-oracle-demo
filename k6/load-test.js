@@ -4,8 +4,8 @@ import { check, sleep } from 'k6';
 // =============================================================================
 // k6 Load Test — Oracle Demo
 // =============================================================================
-// Verifies the Alloy telemetry pipeline is working by polling the metrics
-// endpoint and checking that Oracle metrics are flowing.
+// Verifies the OTel exporter metrics pipeline is working by polling the
+// exporter's metrics endpoint and checking that Oracle metrics are present.
 //
 // The actual database load comes from the generate_load procedure.
 // This k6 test serves as an end-to-end verification that metrics are being
@@ -27,22 +27,16 @@ export const options = {
   },
 };
 
-const ALLOY_URL = __ENV.ALLOY_URL || 'http://localhost:12345';
+const EXPORTER_URL = __ENV.EXPORTER_URL || 'http://localhost:19161';
 
 export default function () {
-  // Check Alloy readiness
-  const readyRes = http.get(`${ALLOY_URL}/-/ready`);
-  check(readyRes, {
-    'alloy is ready': (r) => r.status === 200,
-  });
-
-  // Check Alloy metrics endpoint — this is the main pipeline verification
-  const metricsRes = http.get(`${ALLOY_URL}/metrics`);
+  // Check OTel exporter metrics endpoint
+  const metricsRes = http.get(`${EXPORTER_URL}/metrics`);
   check(metricsRes, {
     'metrics endpoint returns 200': (r) => r.status === 200,
-    'metrics contain alloy_build_info': (r) => r.body.includes('alloy_build_info'),
-    'metrics contain remote_write data': (r) => r.body.includes('prometheus_remote_storage_samples_total'),
-    'scrape targets active': (r) => r.body.includes('scrape_samples_scraped'),
+    'metrics contain oracledb_up': (r) => r.body.includes('oracledb_up'),
+    'metrics contain session data': (r) => r.body.includes('oracledb_sessions'),
+    'metrics contain tablespace data': (r) => r.body.includes('oracledb_tablespace'),
   });
 
   // Simulate user think time

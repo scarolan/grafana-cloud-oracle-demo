@@ -17,14 +17,15 @@
   [ "$output" = "healthy" ]
 }
 
-@test "alloy UI is accessible" {
-  run curl -sf http://localhost:12345/-/ready
+@test "alloy is ready" {
+  run docker compose exec alloy bash -c 'echo > /dev/tcp/localhost/12345'
   [ "$status" -eq 0 ]
 }
 
 @test "alloy metrics endpoint is accessible" {
-  run curl -sf http://localhost:12345/metrics
+  run docker compose exec alloy bash -c 'exec 3<>/dev/tcp/localhost/12345; echo -e "GET /metrics HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; cat <&3; exec 3>&-'
   [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'alloy_build_info'
 }
 
 # --- Oracle DB ---

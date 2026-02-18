@@ -91,7 +91,7 @@ Expected output:
 NAME                STATUS              PORTS
 demo-oracle-db      Up (healthy)        0.0.0.0:1521->1521/tcp
 demo-oracle-otel    Up (healthy)        0.0.0.0:19161->9161/tcp
-demo-oracle-alloy          Up (healthy)        0.0.0.0:12345->12345/tcp
+demo-oracle-alloy   Up (healthy)
 ```
 
 ### Step 4: Import the Dashboard
@@ -302,14 +302,11 @@ docker compose ps
 # All should show "Up (healthy)"
 ```
 
-### 2. Check Alloy UI
+### 2. Check Alloy Components
+```bash
+docker compose exec alloy curl -sf http://localhost:12345/api/v0/web/components | grep -o '"prometheus\.[^"]*"'
+# Should list integration, scrape, and remote_write components
 ```
-http://localhost:12345
-```
-- Navigate to **Components** tab
-- Verify `prometheus.exporter.oracledb.integration` is healthy
-- Verify `prometheus.scrape.otel_exporter` is healthy
-- Check that both are forwarding metrics to `prometheus.remote_write.grafana_cloud`
 
 ### 3. Check Oracle OTel Exporter Metrics
 ```bash
@@ -325,7 +322,7 @@ curl http://localhost:19161/metrics | grep oracledb_up
 ### 5. Verify Metrics Are Flowing
 ```bash
 # Check Alloy metrics sent to Grafana Cloud
-curl -s http://localhost:12345/metrics | grep "prometheus_remote_storage_samples_total"
+docker compose exec alloy curl -sf http://localhost:12345/metrics | grep "prometheus_remote_storage_samples_total"
 # Should show increasing count
 ```
 
@@ -350,7 +347,7 @@ docker compose restart oracle-db
 
 ### Alloy Cannot Connect to Oracle
 
-**Symptom:** `prometheus.exporter.oracledb.integration` shows errors in Alloy UI
+**Symptom:** `prometheus.exporter.oracledb.integration` shows errors in Alloy logs
 
 **Solution:**
 ```bash
@@ -376,9 +373,8 @@ SQL> EXIT;
 # 1. Verify credentials in .env
 cat .env | grep GRAFANA_METRICS
 
-# 2. Check Alloy UI at http://localhost:12345
-#    Look for prometheus.remote_write.grafana_cloud component
-#    Verify "Samples Sent" is increasing
+# 2. Check Alloy metrics for remote_write activity
+docker compose exec alloy curl -sf http://localhost:12345/metrics | grep prometheus_remote_storage_samples_total
 
 # 3. Restart Alloy to pick up new credentials
 docker compose restart alloy
@@ -448,7 +444,7 @@ netsh interface ipv4 show excludedportrange protocol=tcp
 |---------|-----------|----------------|---------|
 | Oracle DB | 1521 | 1521 | Database connections |
 | Oracle OTel Exporter | 19161 | 9161 | Prometheus metrics endpoint |
-| Grafana Alloy | 12345 | 12345 | Alloy UI and metrics |
+| Grafana Alloy | — | 12345 | Internal only (no host port) |
 
 ### Why Not Alloy Alone?
 

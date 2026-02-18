@@ -3,30 +3,40 @@
 # Telemetry Tests — Verify metrics/logs are flowing to Grafana Cloud
 # =============================================================================
 
-ALLOY_URL="http://localhost:12345"
+# Helper: fetch Alloy's metrics endpoint via raw HTTP (no curl in the image)
+alloy_metrics() {
+  docker compose exec alloy bash -c \
+    'exec 3<>/dev/tcp/localhost/12345; echo -e "GET /metrics HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; cat <&3; exec 3>&-'
+}
+
+# Helper: fetch Alloy's components API via raw HTTP
+alloy_components() {
+  docker compose exec alloy bash -c \
+    'exec 3<>/dev/tcp/localhost/12345; echo -e "GET /api/v0/web/components HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; cat <&3; exec 3>&-'
+}
 
 # --- Alloy baseline ---
 
 @test "alloy exposes prometheus metrics" {
-  run curl -sf "$ALLOY_URL/metrics"
+  run alloy_metrics
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'alloy_build_info'
 }
 
 @test "prometheus remote_write is configured" {
-  run curl -sf "$ALLOY_URL/metrics"
+  run alloy_metrics
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'prometheus_remote_write'
 }
 
 @test "metrics samples are being sent" {
-  run curl -sf "$ALLOY_URL/metrics"
+  run alloy_metrics
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'prometheus_remote_storage_samples_total'
 }
 
 @test "no persistent remote_write errors" {
-  run curl -sf "$ALLOY_URL/metrics"
+  run alloy_metrics
   [ "$status" -eq 0 ]
 
   failed=$(echo "$output" | grep '^prometheus_remote_storage_samples_failed_total' | head -1 | awk '{print $2}' || echo "0")
@@ -45,13 +55,13 @@ ALLOY_URL="http://localhost:12345"
 # --- Oracle metrics (native integration) ---
 
 @test "oracledb integration component is active" {
-  run curl -sf "$ALLOY_URL/api/v0/web/components"
+  run alloy_components
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'prometheus.exporter.oracledb.integration'
 }
 
 @test "oracledb integration scrape is active" {
-  run curl -sf "$ALLOY_URL/api/v0/web/components"
+  run alloy_components
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'prometheus.scrape.integration'
 }
@@ -59,7 +69,7 @@ ALLOY_URL="http://localhost:12345"
 # --- Oracle metrics (OTel exporter) ---
 
 @test "otel exporter scrape target is active" {
-  run curl -sf "$ALLOY_URL/api/v0/web/components"
+  run alloy_components
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'prometheus.scrape.otel_exporter'
 }
@@ -67,25 +77,25 @@ ALLOY_URL="http://localhost:12345"
 # --- Log collection ---
 
 @test "loki write endpoint is configured" {
-  run curl -sf "$ALLOY_URL/api/v0/web/components"
+  run alloy_components
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'loki.write.grafana_cloud'
 }
 
 @test "docker log discovery is active" {
-  run curl -sf "$ALLOY_URL/api/v0/web/components"
+  run alloy_components
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'discovery.docker.oracle'
 }
 
 @test "oracle log processing pipeline is active" {
-  run curl -sf "$ALLOY_URL/api/v0/web/components"
+  run alloy_components
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'loki.process.oracle_logs'
 }
 
 @test "loki entries are being sent" {
-  run curl -sf "$ALLOY_URL/metrics"
+  run alloy_metrics
   [ "$status" -eq 0 ]
   echo "$output" | grep -q 'loki_write_sent_entries_total'
 }
