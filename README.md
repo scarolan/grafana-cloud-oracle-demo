@@ -88,10 +88,10 @@ docker compose ps
 
 Expected output:
 ```
-NAME                STATUS              PORTS
-demo-oracle-db      Up (healthy)        0.0.0.0:1521->1521/tcp
-demo-oracle-otel    Up (healthy)        0.0.0.0:19161->9161/tcp
-demo-oracle-alloy   Up (healthy)
+NAME                   STATUS              PORTS
+oracle-db-1            Up (healthy)        0.0.0.0:1521->1521/tcp
+oracle-otel-exporter-1 Up (healthy)        0.0.0.0:19161->9161/tcp
+alloy-1                Up (healthy)
 ```
 
 ### Step 4: Import the Dashboard
@@ -111,19 +111,19 @@ To generate realistic database activity for demos:
 
 ```bash
 # Bash/Linux/Mac
-docker exec demo-oracle-db sqlplus -S demo_user/oracle@XEPDB1 <<< "EXEC generate_load;"
+docker compose exec oracle-db sqlplus -S demo_user/oracle@XEPDB1 <<< "EXEC generate_load;"
 ```
 
 ```powershell
 # PowerShell/Windows
-echo "EXEC generate_load;" | docker exec -i demo-oracle-db sqlplus -S demo_user/oracle@XEPDB1
+echo "EXEC generate_load;" | docker compose exec -T oracle-db sqlplus -S demo_user/oracle@XEPDB1
 ```
 
 **Option 2: Interactive (for troubleshooting)**
 
 ```bash
 # Connect to Oracle as demo_user
-docker exec -it demo-oracle-db sqlplus demo_user/oracle@XEPDB1
+docker compose exec oracle-db sqlplus demo_user/oracle@XEPDB1
 
 # Execute the load generator (runs for ~16 minutes)
 SQL> EXEC generate_load;
@@ -145,10 +145,10 @@ To demonstrate lock contention monitoring:
 
 ```bash
 # Create a 3-minute blocking session scenario (default)
-docker exec demo-oracle-db bash /tmp/create_blocking.sh
+docker compose exec oracle-db bash /tmp/create_blocking.sh
 
 # Or specify a custom duration in seconds
-docker exec demo-oracle-db bash /tmp/create_blocking.sh 60
+docker compose exec oracle-db bash /tmp/create_blocking.sh 60
 ```
 
 Verify in Grafana with query:
@@ -176,10 +176,10 @@ The `ora_error` label is automatically extracted (e.g., `ora_error="ORA-00942"`)
 **To restart error injection manually:**
 ```bash
 # Stop existing injection (if running)
-docker exec demo-oracle-db pkill -f inject_ora_errors
+docker compose exec oracle-db pkill -f inject_ora_errors
 
 # Start error injection
-docker exec -d demo-oracle-db bash /tmp/inject_ora_errors.sh
+docker compose exec -d oracle-db bash /tmp/inject_ora_errors.sh
 ```
 
 ## Running Tests
@@ -352,14 +352,14 @@ docker compose restart oracle-db
 **Solution:**
 ```bash
 # Check Alloy logs
-docker compose logs demo-oracle-alloy | grep -i error
+docker compose logs alloy | grep -i error
 
 # Verify Oracle is healthy
 docker compose ps oracle-db
 # Should show "Up (healthy)"
 
 # Check database connectivity
-docker exec -it demo-oracle-db sqlplus grafanau/oracle@XEPDB1
+docker compose exec oracle-db sqlplus grafanau/oracle@XEPDB1
 SQL> SELECT 1 FROM DUAL;
 SQL> EXIT;
 ```
@@ -392,7 +392,7 @@ docker compose restart alloy
 docker compose logs oracle-otel-exporter
 
 # Verify config file
-docker exec demo-oracle-otel cat /config.yaml
+docker compose exec oracle-otel-exporter cat /config.yaml
 
 # Ensure Oracle is healthy before exporter starts
 docker compose restart oracle-otel-exporter
@@ -465,7 +465,7 @@ databases:
   default:
     username: grafanau
     password: oracle
-    url: demo-oracle-db:1521/XEPDB1
+    url: oracle-db:1521/XEPDB1
     queryTimeout: 5
 ```
 
@@ -524,7 +524,7 @@ To add custom SQL queries as metrics:
      default:
        username: grafanau
        password: oracle
-       url: demo-oracle-db:1521/XEPDB1
+       url: oracle-db:1521/XEPDB1
        queryTimeout: 5
        customMetrics: /custom-metrics.toml
    ```

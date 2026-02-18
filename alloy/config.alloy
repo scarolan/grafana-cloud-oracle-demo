@@ -28,7 +28,7 @@ prometheus.scrape "alloy_self" {
 
 // Oracle Integration -- Native Alloy Exporter (collection_method="integration")
 prometheus.exporter.oracledb "integration" {
-    connection_string = "oracle://grafanau:oracle@demo-oracle-db:1521/XEPDB1"
+    connection_string = "oracle://grafanau:oracle@oracle-db:1521/XEPDB1"
 }
 
 discovery.relabel "integration" {
@@ -59,7 +59,7 @@ prometheus.scrape "integration" {
 // Oracle OTel Exporter -- Scrape from Official Oracle Exporter (collection_method="otel_exporter")
 discovery.relabel "otel_exporter" {
     targets = [{
-        __address__ = "demo-oracle-otel:9161",
+        __address__ = "oracle-otel-exporter:9161",
     }]
 
     rule {
@@ -110,21 +110,17 @@ loki.write "grafana_cloud" {
     }
 }
 
-// Docker container log discovery -- collect logs from demo-* containers
+// Docker container log discovery -- collect logs from containers in this compose project
 discovery.docker "oracle" {
     host = "unix:///var/run/docker.sock"
-    filter {
-        name   = "name"
-        values = ["demo-"]
-    }
 }
 
 discovery.relabel "oracle_logs" {
     targets = discovery.docker.oracle.targets
 
     rule {
-        source_labels = ["__meta_docker_container_name"]
-        regex         = "/demo-oracle-db"
+        source_labels = ["__meta_docker_compose_service"]
+        regex         = "oracle-db"
         action        = "keep"
     }
 
