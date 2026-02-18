@@ -1,3 +1,5 @@
+name: oracle-demo
+
 services:
   oracle-db:
     image: gvenzl/oracle-xe:latest
@@ -8,6 +10,7 @@ services:
       - "1521:1521"
     volumes:
       - ./oracle-init/init.sql:/container-entrypoint-initdb.d/init.sql
+      - ./oracle-init/create_blocking.sh:/tmp/create_blocking.sh
       - oracle-logs:/opt/oracle/diag/rdbms/xe/XE/trace
     healthcheck:
       test: ["CMD", "healthcheck.sh"]

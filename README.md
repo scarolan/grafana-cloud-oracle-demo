@@ -135,12 +135,11 @@ This demo includes automated scripts for showcasing Oracle monitoring capabiliti
 To demonstrate lock contention monitoring:
 
 ```bash
-# Create a 3-minute blocking session scenario
+# Create a 3-minute blocking session scenario (default)
 docker exec oracle-db bash /tmp/create_blocking.sh
 
-# Output shows:
-# Blocker SID: XX
-# Blocked SID: YY
+# Or specify a custom duration in seconds
+docker exec oracle-db bash /tmp/create_blocking.sh 60
 ```
 
 Verify in Grafana with query:
@@ -427,9 +426,15 @@ netsh interface ipv4 show excludedportrange protocol=tcp
 | Oracle OTel Exporter | 19161 | 9161 | Prometheus metrics endpoint |
 | Grafana Alloy | 12345 | 12345 | Alloy UI and metrics |
 
-### Alloy Version
+### Why Not Alloy Alone?
 
-This demo uses **Grafana Alloy v1.8.2** (pre-1.9.0) to avoid Oracle Instant Client dependency. The `prometheus.exporter.oracledb` component works out-of-the-box in this version without additional Oracle libraries.
+This demo uses **Grafana Alloy v1.8.2** and a separate Oracle OTel Exporter container rather than relying solely on Alloy's built-in `prometheus.exporter.oracledb`. There are two reasons:
+
+1. **Custom metrics are not yet supported in Alloy's built-in exporter.** The `custom_metrics` argument was added in v1.3.0 but remains non-functional due to an outdated internal dependency. This means Alloy can't run custom SQL queries for things like blocking sessions, slow queries, or long transactions. See [grafana/alloy#419](https://github.com/grafana/alloy/issues/419).
+
+2. **Alloy v1.9.0+ requires Oracle Instant Client**, which is not bundled in the stock `grafana/alloy` Docker image. Starting with v1.9.0, Alloy switched its internal exporter from the unmaintained [iamseth/oracledb_exporter](https://github.com/iamseth/oracledb_exporter) to [oracle/oracle-db-appdev-monitoring](https://github.com/oracle/oracle-db-appdev-monitoring), which requires the Oracle client libraries. Until these are bundled in the image, upgrading past v1.8.2 breaks the built-in exporter for Docker-based deployments. See [grafana/alloy#4153](https://github.com/grafana/alloy/issues/4153).
+
+The separate Oracle OTel Exporter container sidesteps both issues: it ships with its own Oracle client and fully supports custom metrics via TOML configuration.
 
 ### Oracle OTel Exporter Configuration
 
@@ -542,18 +547,20 @@ grafana-cloud-oracle-demo/
 
 ### Why Two Collection Methods?
 
-- **Native Integration (Alloy)**:
+- **Native Integration (Alloy v1.8.2)**:
   - Lightweight, no additional containers
   - Part of Grafana's observability stack
   - Easy to configure and maintain
+  - Limited to built-in metrics (no custom SQL queries yet — see [grafana/alloy#419](https://github.com/grafana/alloy/issues/419))
 
 - **Oracle OTel Exporter**:
   - Official Oracle-supported tool
-  - More comprehensive metrics (wait times, top SQL)
+  - Supports custom metrics via TOML (blocking sessions, slow queries, etc.)
+  - More comprehensive built-in metrics (wait times, top SQL)
   - Familiar to Oracle DBAs
   - Can be used independently of Grafana
 
-This demo proves both work seamlessly together, giving organizations choice and flexibility.
+This demo runs both side-by-side, giving organizations choice and flexibility. When Alloy resolves the Oracle Instant Client bundling ([grafana/alloy#4153](https://github.com/grafana/alloy/issues/4153)) and custom metrics support, consolidation to a single Alloy container may be possible.
 
 ## Resources
 
